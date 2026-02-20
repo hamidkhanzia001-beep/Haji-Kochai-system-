@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ps" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haji Kochai Ltd - System</title>
+    <style>
+        /* ټول سټایلونه دلته دي */
+        :root { --primary: #2ecc71; --dark: #2c3e50; --blue: #5d5fef; }
+        body { background: #f4f7f6; font-family: 'Arial', sans-serif; margin: 0; display: flex; justify-content: center; }
+        .container { width: 95%; max-width: 450px; background: #fff; padding: 20px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .app-header { text-align: center; border-bottom: 2px solid var(--blue); padding-bottom: 10px; margin-bottom: 20px; }
+        .company-logo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--blue); }
+        .balance-container { text-align: center; background: var(--dark); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .btn { background: var(--blue); color: white; border: none; padding: 14px; width: 100%; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .list { padding: 0; }
+        .list li { list-style: none; display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; background: #fff; margin-bottom: 5px; border-radius: 5px; }
+        .only-print { display: none; }
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-box { background: white; padding: 30px; border-radius: 12px; text-align: center; width: 80%; max-width: 300px; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .only-print { display: block !important; }
+            .footer-grid { display: flex; justify-content: space-between; margin-top: 80px; text-align: center; align-items: flex-end; }
+            .manual-sign-space { height: 60px; }
+            .sign-line { border-top: 1.5px solid #000; width: 180px; margin: 5px auto; }
+            .ceo-name { font-weight: bold; font-size: 18px; color: #000; }
+            .ceo-title { font-size: 13px; color: #444; }
+            .actual-stamp { width: 130px; height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="login-overlay">
+        <div class="login-box">
+            <img src="logo.png" onerror="this.src='https://via.placeholder.com/80'" class="company-logo">
+            <h2 style="color:var(--dark)">Haji Kochai Ltd</h2>
+            <input type="password" id="password-input" placeholder="پاسورډ: 1234">
+            <button onclick="checkPassword()" class="btn">ننوتل</button>
+        </div>
+    </div>
+
+    <div class="container" id="main-app" style="display: none;">
+        <header class="app-header">
+            <img src="logo.png" onerror="this.style.display='none'" class="company-logo">
+            <h2 style="margin:10px 0 5px 0;">Haji Kochai Oil & Sugar Ltd</h2>
+            <p style="margin:0; color:#666;">د مالي مدیریت سیسټم</p>
+        </header>
+
+        <div class="balance-container">
+            <p style="margin:0; opacity: 0.8;">اوسنۍ موجودۍ</p>
+            <h1 id="balance" style="margin: 10px 0 0 0; font-size: 32px;">0.00 $</h1>
+        </div>
+
+        <div class="no-print">
+            <form id="form">
+                <input type="text" id="text" placeholder="معامله (مثلاً: د بورې پلور)" required>
+                <input type="number" id="amount" step="0.01" placeholder="مقدار (+ عاید، - مصرف)" required>
+                <input type="date" id="date" required>
+                <button type="submit" class="btn">ثبتول</button>
+            </form>
+            <button onclick="window.print()" class="btn" style="background:#2ecc71; margin-top:10px;">د رسمي راپور چاپول</button>
+        </div>
+
+        <h3 style="border-right: 4px solid var(--blue); padding-right: 10px; margin-top: 25px;">د معاملو تاریخچه</h3>
+        <ul id="list" class="list"></ul>
+
+        <div class="report-footer only-print">
+            <div class="footer-grid">
+                <div class="signature-box">
+                    <p>مالي مدیر (Accountant)</p>
+                    <div class="manual-sign-space"></div>
+                    <div class="sign-line"></div>
+                </div>
+                <div class="stamp-box">
+                    <img src="stamp.png" onerror="this.style.display='none'" class="actual-stamp">
+                    <p style="font-size: 10px;">رسمي مهر</p>
+                </div>
+                <div class="signature-box">
+                    <div class="manual-sign-space"></div>
+                    <div class="sign-line"></div>
+                    <div class="ceo-name">Nesar Ahmad Kochai</div>
+                    <div class="ceo-title">CEO / Director</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+        function checkPassword() {
+            if (document.getElementById('password-input').value === "1234") {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                updateValues();
+            } else { alert("غلط پاسورډ! (1234 وکاروئ)"); }
+        }
+
+        document.getElementById('form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = document.getElementById('text').value;
+            const amount = +document.getElementById('amount').value;
+            const date = document.getElementById('date').value;
+            
+            transactions.push({ id: Date.now(), text, amount, date });
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            updateValues();
+            document.getElementById('form').reset();
+        });
+
+        function updateValues() {
+            const list = document.getElementById('list');
+            list.innerHTML = '';
+            let total = 0;
+            transactions.forEach(t => {
+                total += t.amount;
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${t.text} <small>(${t.date})</small></span> 
+                               <span style="color: ${t.amount > 0 ? 'green' : 'red'}">${t.amount.toFixed(2)} $</span>`;
+                list.appendChild(li);
+            });
+            document.getElementById('balance').innerText = total.toFixed(2) + ' $';
+        }
+    </script>
+</body>
+</html>
